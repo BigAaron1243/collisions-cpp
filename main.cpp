@@ -1,5 +1,4 @@
 
-
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
@@ -7,7 +6,11 @@
 #include "loader.h"
 
 int main(int argc, char *argv[]) {
-    lInitGLFW();
-    std::cout << "Got 'ere\n";
-    lTerminateGLFW();
+    GLFWwindow* window = lInitGLFW();   
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
+    while (!glfwWindowShouldClose(window)) {
+        
+    }
+    lTerminateGLFW(window);
 }

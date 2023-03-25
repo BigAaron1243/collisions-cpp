@@ -3,16 +3,21 @@ void error_callback(int error, const char* description) {
     std::cerr << "Error: " << description;
 }
 
-int lInitGLFW() {
+GLFWwindow* lInitGLFW() {
     if (!glfwInit())
     {
-        return -1;
+        return NULL;
     }
     glfwSetErrorCallback(error_callback);
-    return 0;
+    GLFWwindow* window = glfwCreateWindow(640, 480, "Collisions", NULL, NULL);
+    if (!window) {
+        return NULL;
+    }
+    return window;
 }
 
-void lTerminateGLFW() {
+void lTerminateGLFW(GLFWwindow* window) {
+    glfwDestroyWindow(window);
     glfwTerminate();
 }
 

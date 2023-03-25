@@ -1,0 +1,1 @@
+g++ -I"./glad/include/" -I"./glfw/include/" -L".\glfw\lib-mingw-w64\" .\main.cpp -lglfw3 -lgdi32

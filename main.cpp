@@ -3,6 +3,7 @@
 #include "GLFW/glfw3.h"
 #include "linmath.h"
 #include <iostream>
+#include <vector>
 
 
 struct vattr
@@ -32,26 +33,28 @@ struct vattr vertices2[3] =
     {   0.f,  0.6f, 0.f, 0.f, 1.f },
 };
 
+
+static const GLfloat g_vertex_buffer_data[] = {
+   -1.0f, -1.0f, 0.0f,
+   1.0f, -1.0f, 0.0f,
+   0.0f,  1.0f, 0.0f,
+};
+
 static const char* vertex_shader_text =
-"#version 110\n"
-"uniform mat4 MVP;\n"
-"attribute vec3 vCol;\n"
-"attribute vec2 vPos;\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
-"    color = vCol;\n"
+"#version 330 core\n"
+"layout(location = 0) in vec3 vertexPosition_modelspace;\n"
+"void main() {\n"
+"   gl_Position.xyz = vertexPosition_modelspace;\n"
+"   gl_Position.w = 1.0;\n"
 "}\n";
 
 
 
 static const char* fragment_shader_text =
-"#version 110\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_FragColor = vec4(color, 1.0);\n"
+"#version 330 core\n"
+"out vec3 color;\n"
+"void main() {\n"
+"    color = vec3(0, 1, 0);\n"
 "}\n";
 
 
@@ -96,10 +99,96 @@ int main(int argc, char *argv[]) {
     glfwSetKeyCallback(window, key_callback);
 
 
-    while (!glfwWindowShouldClose(window)) {
-        // Clear Screen
-        glClear(GL_COLOR_BUFFER_BIT);
+    // VAO
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
 
+    // Buffer
+    GLuint vertexbuffer;
+
+    // Generate buffer and put identifier in vertexbuffer
+    glGenBuffers(1, &vertexbuffer);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+    // This will give vertices to opengl
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+
+    // Compile shaders
+    // Vertex shader
+    GLint Result = GL_FALSE;
+    int InfoLogLength;
+
+    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+    glShaderSource(VertexShaderID, 1, &vertex_shader_text, NULL);
+    glCompileShader(VertexShaderID);
+
+    // Check Vertex Shader
+	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if ( InfoLogLength > 0 ){
+		std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
+		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+		printf("%s\n", &VertexShaderErrorMessage[0]);
+	}
+
+	// Compile Fragment Shader
+	glShaderSource(FragmentShaderID, 1, &fragment_shader_text , NULL);
+	glCompileShader(FragmentShaderID);
+
+    // Check fragment shader
+    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if ( InfoLogLength > 0 ){
+		std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
+		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+		printf("%s\n", &FragmentShaderErrorMessage[0]);
+	}
+
+    // Link program (Shaders)
+    GLuint ProgramID = glCreateProgram();
+    glAttachShader(ProgramID, VertexShaderID);
+	glAttachShader(ProgramID, FragmentShaderID);
+	glLinkProgram(ProgramID);
+
+	// Check the program
+	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
+	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if ( InfoLogLength > 0 ){
+		std::vector<char> ProgramErrorMessage(InfoLogLength+1);
+		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+		printf("%s\n", &ProgramErrorMessage[0]);
+	}
+
+	glDetachShader(ProgramID, VertexShaderID);
+	glDetachShader(ProgramID, FragmentShaderID);
+	
+	glDeleteShader(VertexShaderID);
+	glDeleteShader(FragmentShaderID);
+
+    glUseProgram(ProgramID);
+
+    // Set glClearColor
+    glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
+
+    while (!glfwWindowShouldClose(window)) {
+
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // vertices buffer
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        
+        // attribute 0, size, type, normalized?, stride, array buffer offset
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        // Draw the triangle
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDisableVertexAttribArray(0);
 
         // Swap buffers
         glfwSwapBuffers(window);

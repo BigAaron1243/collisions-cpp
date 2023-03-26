@@ -12,32 +12,19 @@ struct vattr
     float r, g, b;
 }; 
 
-struct vattr vertices[9] =
-{
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f },
-    { 1.f, 1.f, 0.f, 1.f, 1.f},
-    { 1.f, 0.f, 1.f, 0.f, 1.f},
-    { 0.f, 1.f, 1.f, 1.f, 0.f},
-    { 0.f, 0.2f, 1.f, 1.f, 0.f},
-    { 0.2f, 0.f, 1.f, 0.f, 1.f},
-    { -1.f, 1.f, 0.f, 1.f, 1.f}
-};
 
-
-struct vattr vertices2[3] =
-{
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f },
-};
-
+bool toggle = 0;
 
 static const GLfloat g_vertex_buffer_data[] = {
    -1.0f, -1.0f, 0.0f,
+   0.0f, -1.0f, 0.0f,
+   -0.5f,  1.0f, 0.0f,
+};
+
+static const GLfloat g_vertex_buffer_data_2[] = {
    1.0f, -1.0f, 0.0f,
-   0.0f,  1.0f, 0.0f,
+   0.0f, -1.0f, 0.0f,
+   0.5f,  1.0f, 0.0f,
 };
 
 static const char* vertex_shader_text =
@@ -66,6 +53,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+        toggle = !toggle;
 }
 
 
@@ -114,6 +103,7 @@ int main(int argc, char *argv[]) {
 
     // This will give vertices to opengl
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_2), g_vertex_buffer_data_2, GL_DYNAMIC_DRAW);
 
     // Compile shaders
     // Vertex shader
@@ -176,6 +166,11 @@ int main(int argc, char *argv[]) {
 
     while (!glfwWindowShouldClose(window)) {
 
+        if (toggle) { 
+            glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+        } else {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_2), g_vertex_buffer_data_2, GL_DYNAMIC_DRAW);
+        }
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

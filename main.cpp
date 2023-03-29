@@ -4,6 +4,7 @@
 #include "linmath.h"
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 
 struct vattr
@@ -11,6 +12,7 @@ struct vattr
     float x, y;
     float r, g, b;
 }; 
+
 
 
 bool toggle = 0;
@@ -27,21 +29,34 @@ static const GLfloat g_vertex_buffer_data_2[] = {
    0.5f,  1.0f, 0.0f,
 };
 
+static const GLfloat g_color_buffer_data[] = {
+    1.f, 0.f, 0.f,
+    0.f, 1.f, 0.f,
+    0.f, 0.f, 1.f,
+    1.f, 1.f, 0.f,
+    0.f, 1.f, 1.f,
+    1.f, 0.f, 1.f,
+};
+
 static const char* vertex_shader_text =
 "#version 330 core\n"
 "layout(location = 0) in vec3 vertexPosition_modelspace;\n"
+"layout(location = 1) in vec3 vertexColor;\n"
+"out vec3 fragmentColor;\n"
 "void main() {\n"
 "   gl_Position.xyz = vertexPosition_modelspace;\n"
 "   gl_Position.w = 1.0;\n"
+"   fragmentColor = vec3(vertexColor.y + 0.8 * 0.5, 0.3, vertexColor.y * - 0.5);\n"
 "}\n";
 
 
 
 static const char* fragment_shader_text =
 "#version 330 core\n"
+"in vec3 fragmentColor;\n"
 "out vec3 color;\n"
 "void main() {\n"
-"    color = vec3(0, 1, 0);\n"
+"    color = fragmentColor;\n"
 "}\n";
 
 
@@ -93,17 +108,23 @@ int main(int argc, char *argv[]) {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    // Buffer
+    // Vertex buffer
     GLuint vertexbuffer;
+
+    // Color buffer
+    GLuint colorbuffer;
 
     // Generate buffer and put identifier in vertexbuffer
     glGenBuffers(1, &vertexbuffer);
+    glGenBuffers(1, &colorbuffer);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
 
     // This will give vertices to opengl
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_2), g_vertex_buffer_data_2, GL_DYNAMIC_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_2), g_vertex_buffer_data_2, GL_DYNAMIC_DRAW);
 
     // Compile shaders
     // Vertex shader
@@ -162,15 +183,28 @@ int main(int argc, char *argv[]) {
     glUseProgram(ProgramID);
 
     // Set glClearColor
-    glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
     while (!glfwWindowShouldClose(window)) {
 
-        if (toggle) { 
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        if (toggle) {
             glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
         } else {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_2), g_vertex_buffer_data_2, GL_DYNAMIC_DRAW);
+            GLfloat bongofloats[18];
+            for (int i = 0; i < 18; i++) {
+                if (i < 9) {
+                    bongofloats[i] = g_vertex_buffer_data[i];
+                } else {
+                    bongofloats[i] = g_vertex_buffer_data_2[i - 9];
+                }
+            }
+            glBufferData(GL_ARRAY_BUFFER, sizeof(bongofloats), bongofloats, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(bongofloats), bongofloats, GL_DYNAMIC_DRAW);
         }
+
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -181,9 +215,15 @@ int main(int argc, char *argv[]) {
         // attribute 0, size, type, normalized?, stride, array buffer offset
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+        // color buffer
+        glEnableVertexAttribArray(1);
+        //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
         // Draw the triangle
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         // Swap buffers
         glfwSwapBuffers(window);

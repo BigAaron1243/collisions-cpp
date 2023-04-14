@@ -14,6 +14,9 @@ struct vattr
 }; 
 
 
+struct posxy {
+    float x, y;
+};
 
 bool toggle = 0;
 
@@ -72,10 +75,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         toggle = !toggle;
 }
 
-
+std::vector<struct posxy> particles;
 
 int main(int argc, char *argv[]) {
 
+
+    struct posxy;
+    posxy.x = 0;
+    posxy.y = 0;
+
+
+    /// vvvvvvv RELATED TO OPENGL vvvvvvv
 
     // Init glfw
     if (!glfwInit())

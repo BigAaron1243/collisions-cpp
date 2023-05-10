@@ -239,6 +239,10 @@ int main(int argc, char *argv[]) {
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
     int increment = 0;
+    std::vector<Particle> pList(3);
+    pList[0] = Particle();
+    pList[1] = Particle();
+    pList[2] = Particle();
     while (!glfwWindowShouldClose(window)) {
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -247,7 +251,6 @@ int main(int argc, char *argv[]) {
         } else {
             increment++;
             std::vector<GLfloat> drawVertPtr(56);
-
             Particle lilpart;
             lilpart.r = (sin(increment * 0.01) + 1) * 0.05 + 0.2;
             drawVertPtr = lilpart.get_draw_data();

@@ -5,7 +5,50 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <math.h>
 
+#define sq3o2 0.866025404f
+
+
+class Particle {
+    public:
+        double x, y, r;
+        std::vector<GLfloat> get_draw_data();
+};
+
+std::vector<GLfloat> Particle::get_draw_data() {
+        std::vector<GLfloat> outPtr(56);
+        GLfloat relative_pos[] = { 
+            sq3o2, 0.5f, 0.0f, 0.f, 1.f, 0.0f, 0.f, 0.f, 0.0f, 
+            0.f, 1.f, 0.0f, -sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+            -sq3o2, 0.5f, 0.0f, -sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+            -sq3o2, -0.5f, 0.0f, 0, -1.f, 0.0f, 0.f, 0.0f, 0.0f,
+            0.f, -1.f, 0.0f, sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+            sq3o2, -0.5f, 0.0f, sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+        };
+        int xl[] = {
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        };
+        int yl[] = { 
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+        };
+        //outPtr = clown;
+        for (int i = 0; i < 54; i++) {
+            outPtr[i] = relative_pos[i] * r + xl[i] * x + yl[i] * y;
+        }
+        //memcpy(outPtr, &clown, 9 * sizeof(GLfloat));
+        return outPtr;
+}
 
 struct vattr
 {
@@ -26,6 +69,7 @@ static const GLfloat g_vertex_buffer_data[] = {
    -0.5f,  1.0f, 0.0f,
 };
 
+
 static const GLfloat g_vertex_buffer_data_2[] = {
    1.0f, -1.0f, 0.0f,
    0.0f, -1.0f, 0.0f,
@@ -33,12 +77,12 @@ static const GLfloat g_vertex_buffer_data_2[] = {
 };
 
 static const GLfloat g_color_buffer_data[] = {
-    1.f, 0.f, 0.f,
-    0.f, 1.f, 0.f,
-    0.f, 0.f, 1.f,
-    1.f, 1.f, 0.f,
-    0.f, 1.f, 1.f,
-    1.f, 0.f, 1.f,
+    //1.f, 0.f, 0.f,
+    //0.f, 1.f, 0.f,
+    //0.f, 0.f, 1.f,
+    //1.f, 1.f, 0.f,
+    //0.f, 1.f, 1.f,
+    //1.f, 0.f, 1.f,
 };
 
 static const char* vertex_shader_text =
@@ -49,7 +93,7 @@ static const char* vertex_shader_text =
 "void main() {\n"
 "   gl_Position.xyz = vertexPosition_modelspace;\n"
 "   gl_Position.w = 1.0;\n"
-"   fragmentColor = vec3(vertexColor.y + 0.8 * 0.5, 0.3, vertexColor.y * - 0.5);\n"
+"   fragmentColor = vec3((vertexColor.y + 1) /2, 0.f, ((vertexColor.y - 1) / 2) * -1);\n"
 "}\n";
 
 
@@ -80,9 +124,9 @@ std::vector<struct posxy> particles;
 int main(int argc, char *argv[]) {
 
 
-    struct posxy;
-    posxy.x = 0;
-    posxy.y = 0;
+    struct posxy pxy;
+    pxy.x = 0;
+    pxy.y = 0;
 
 
     /// vvvvvvv RELATED TO OPENGL vvvvvvv
@@ -99,7 +143,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_SAMPLES, 4); //4x antialiasing
     
     // Create window and make it current
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Collisions", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(640, 640, "Collisions", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to open glfw window";
         glfwTerminate();
@@ -194,24 +238,22 @@ int main(int argc, char *argv[]) {
 
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-
+    int increment = 0;
     while (!glfwWindowShouldClose(window)) {
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (toggle) {
             glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
         } else {
-            GLfloat bongofloats[18];
-            for (int i = 0; i < 18; i++) {
-                if (i < 9) {
-                    bongofloats[i] = g_vertex_buffer_data[i];
-                } else {
-                    bongofloats[i] = g_vertex_buffer_data_2[i - 9];
-                }
-            }
-            glBufferData(GL_ARRAY_BUFFER, sizeof(bongofloats), bongofloats, GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(bongofloats), bongofloats, GL_DYNAMIC_DRAW);
+            increment++;
+            std::vector<GLfloat> drawVertPtr(56);
+
+            Particle lilpart;
+            lilpart.r = (sin(increment * 0.01) + 1) * 0.05 + 0.2;
+            drawVertPtr = lilpart.get_draw_data();
+            GLfloat *drawVertPtrArray = &drawVertPtr[0];
+            
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 56, drawVertPtrArray, GL_DYNAMIC_DRAW);
         }
 
 
@@ -231,7 +273,7 @@ int main(int argc, char *argv[]) {
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
         // Draw the triangle
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, 18);
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
 

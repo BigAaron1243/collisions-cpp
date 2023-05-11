@@ -13,6 +13,9 @@
 class Particle {
     public:
         double x, y, r;
+        double dx = 0;
+        double dy = 0;
+
         int edges;
         std::vector<GLfloat> RVL;
         std::vector<GLfloat> xl;
@@ -20,43 +23,62 @@ class Particle {
 
         std::vector<GLfloat> get_draw_data();
         Particle(int edgesInit, double rInit, double xInit, double yInit); 
+        void update(double scale);
+        void addDxDy(double iDx, double iDy);
 };
 
 Particle::Particle(int edgesInit, double rInit, double xInit, double yInit) {
-        x = xInit;
-        y = yInit;
-        r = rInit;
-        edges = edgesInit;
-        double angle = (2 * M_PI) / edges;
-        for (int i = 0; i < edges; i++) {
-            RVL.insert(RVL.end(), {
-                cos(i * angle), sin(i * angle), 0.f,
-                cos((i + 1) * angle), sin((i + 1) * angle), 0.f,
-                0.f, 0.f, 0.f 
-            });
-        }
-        for (int i = 0; i < edges * 3; i++) {
-            xl.insert(xl.end(), {1, 0, 0};
-            yl.insert(xl.end(), {0, 1, 0};
-        }
+    x = xInit;
+    y = yInit;
+    r = rInit;
+    edges = edgesInit;
+    double angle = (2 * M_PI) / edges;
+    for (int i = 0; i < edges; i++) {
+        RVL.insert(RVL.end(), {
+            cos(i * angle), sin(i * angle), 0.f,
+            cos((i + 1) * angle), sin((i + 1) * angle), 0.f,
+            0.f, 0.f, 0.f 
+        });
+    }
+    for (int i = 0; i < edges * 3; i++) {
+        //xl.insert(xl.end(), {1, 0, 0});
+        //yl.insert(xl.end(), {0, 1, 0});
+        xl.push_back(1);
+        xl.push_back(0);
+        xl.push_back(0);
+
+        yl.push_back(0);
+        yl.push_back(1);
+        yl.push_back(0);
+    }
 }
 
 std::vector<GLfloat> Particle::get_draw_data() {
-        std::vector<GLfloat> outPtr(edges * 9);
-        /*GLfloat relative_pos[] = { 
-            sq3o2, 0.5f, 0.0f, 0.f, 1.f, 0.0f, 0.f, 0.f, 0.0f, 
-            0.f, 1.f, 0.0f, -sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
-            -sq3o2, 0.5f, 0.0f, -sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
-            -sq3o2, -0.5f, 0.0f, 0, -1.f, 0.0f, 0.f, 0.0f, 0.0f,
-            0.f, -1.f, 0.0f, sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
-            sq3o2, -0.5f, 0.0f, sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
-        };*/
-        //outPtr = clown;
-        for (int i = 0; i < edges * 9; i++) {
-            outPtr[i] = RVL[i] * r + xl[i] * x + yl[i] * y;
-        }
-        //memcpy(outPtr, &clown, 9 * sizeof(GLfloat));
-        return outPtr;
+    std::vector<GLfloat> outPtr(edges * 9);
+    /*GLfloat relative_pos[] = { 
+        sq3o2, 0.5f, 0.0f, 0.f, 1.f, 0.0f, 0.f, 0.f, 0.0f, 
+        0.f, 1.f, 0.0f, -sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+        -sq3o2, 0.5f, 0.0f, -sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+        -sq3o2, -0.5f, 0.0f, 0, -1.f, 0.0f, 0.f, 0.0f, 0.0f,
+        0.f, -1.f, 0.0f, sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+        sq3o2, -0.5f, 0.0f, sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
+    };*/
+    //outPtr = clown;
+    for (int i = 0; i < edges * 9; i++) {
+        outPtr[i] = RVL[i] * r + xl[i] * x + yl[i] * y;
+    }
+    //memcpy(outPtr, &clown, 9 * sizeof(GLfloat));
+    return outPtr;
+}
+
+void Particle::addDxDy(double iDx, double iDy) {
+    dx = dx + iDx;
+    dy = dy + iDy;
+}
+
+void Particle::update(double scale) {
+    x += dx * scale;
+    y += dy * scale;
 }
 
 struct vattr
@@ -255,11 +277,18 @@ int main(int argc, char *argv[]) {
     //Particle lilpart(edges, 0.3, 0, 0);
     while (!glfwWindowShouldClose(window)) {
 
+
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (toggle) {
             glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
         } else {
             std::vector<GLfloat> drawVertPtr;
+            for (int i = 0; i < pList.size(); i++) {
+                pList.at(i).addDxDy(0, -0.00001);
+                pList[i].update(1);
+            }
+            std::cout << pList[0].dy << std::endl;
+
             /*for (int i = 0; i < lilpart.get_draw_data().size(); i++) {
                 if ((i) % 3 == 0) {
                     std::cout << '(' << lilpart.get_draw_data()[i] << ", ";

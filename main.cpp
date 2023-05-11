@@ -377,6 +377,7 @@ int main(int argc, char *argv[]) {
                     if (jX < iX + cRng && jX > iX - cRng && jY < iY + cRng && jY > iY - cRng) {
                         double hypotenuse = sqrt(pow((iX - jX), 2) + pow((iY - jY), 2));
                         if (hypotenuse < 2*radius) {
+                            //-- This pushes the circles out of eachother
                             double c = 2 * radius - hypotenuse;
                             double theta = asin((iY - jY) / hypotenuse);
                             //std::cout << "c: " << c << std::endl;
@@ -386,10 +387,40 @@ int main(int argc, char *argv[]) {
                             pList.at(j).x -= b;
                             pList.at(i).y += h;
                             pList.at(j).y -= h;
-                            pList[i].dy = 0;
-                            pList[j].dy = 0;
+                            //pList[i]
+                            //pList[i].dy = 0;
+                            //pList[j].dy = 0;
                             //pList[i].addDxDy(-pList[i].dx, -pList[i].dy);
                             //pList[j].addDxDy(-pList[j].dx, -pList[j].dy);
+                            //-- We will now calculate the resultant momentum from the collision
+                            std::pair<double, double> direction(jX - iX, jY - iY);
+                            double magnitude = sqrt(direction.first * direction.first + direction.second * direction.second);
+                            std::pair<double, double> normal(-direction.second, direction.first);
+                            normal.first /= magnitude;
+                            normal.second /= magnitude;
+
+                            std::pair<double, double> p (iX-jX, iY-jY);
+                            std::pair<double, double> v (pList[i].dx-pList[j].dx, pList[i].dy-pList[j].dy);
+                            
+                            //std::cout << "(" << normal.first << ", " << normal.second << ")\n";
+                            /*std::pair<double, double> velocity1(iX, iX);
+                            std::pair<double, double> velocity2(jX, jX);
+
+                            double v1d = dot(velocity1, direction) / magnitude;
+                            double v1n = dot(velocity1, normal) / magnitude;
+                            double v2d = dot(velocity2, direction) / magnitude;
+                            double v2n = dot(velocity2, normal) / magnitude;
+                            double m1 = 1;
+                            double m2 = 1;
+                            double u1d = ((m1 - m2) * v1d + 2 * m2 * v2d) / (m1 + m2);
+                            double u2d = ((m2 - m1) * v2d + 2 * m1 * v1d) / (m1 + m2);
+                            double u1n = v1n;
+                            double u2n = v2n;
+
+                            // Calculate the final velocities
+                            std::pair<double, double> u1 = u1d * direction + u1n * normal;
+                            std::pair<double, double> u2 = u2d * direction + u2n * normal;
+                            */
                         }
                     }
                 }
@@ -453,4 +484,8 @@ int main(int argc, char *argv[]) {
     }
     glfwDestroyWindow(window);
     glfwTerminate();
+}
+
+double dot(const std::pair<double, double>& v1, const std::pair<double, double>& v2) {
+        return v1.first * v2.first + v1.second * v2.second;
 }

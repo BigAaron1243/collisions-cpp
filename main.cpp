@@ -13,38 +13,47 @@
 class Particle {
     public:
         double x, y, r;
+        int edges;
+        std::vector<GLfloat> RVL;
+        std::vector<GLfloat> xl;
+        std::vector<GLfloat> yl;
+
         std::vector<GLfloat> get_draw_data();
+        Particle(int edgesInit, double rInit, double xInit, double yInit); 
 };
 
+Particle::Particle(int edgesInit, double rInit, double xInit, double yInit) {
+        x = xInit;
+        y = yInit;
+        r = rInit;
+        edges = edgesInit;
+        double angle = (2 * M_PI) / edges;
+        for (int i = 0; i < edges; i++) {
+            RVL.insert(RVL.end(), {
+                cos(i * angle), sin(i * angle), 0.f,
+                cos((i + 1) * angle), sin((i + 1) * angle), 0.f,
+                0.f, 0.f, 0.f 
+            });
+        }
+        for (int i = 0; i < edges * 3; i++) {
+            xl.insert(xl.end(), {1, 0, 0};
+            yl.insert(xl.end(), {0, 1, 0};
+        }
+}
+
 std::vector<GLfloat> Particle::get_draw_data() {
-        std::vector<GLfloat> outPtr(56);
-        GLfloat relative_pos[] = { 
+        std::vector<GLfloat> outPtr(edges * 9);
+        /*GLfloat relative_pos[] = { 
             sq3o2, 0.5f, 0.0f, 0.f, 1.f, 0.0f, 0.f, 0.f, 0.0f, 
             0.f, 1.f, 0.0f, -sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
             -sq3o2, 0.5f, 0.0f, -sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
             -sq3o2, -0.5f, 0.0f, 0, -1.f, 0.0f, 0.f, 0.0f, 0.0f,
             0.f, -1.f, 0.0f, sq3o2, -0.5f, 0.0f, 0.f, 0.0f, 0.0f,
             sq3o2, -0.5f, 0.0f, sq3o2, 0.5f, 0.0f, 0.f, 0.0f, 0.0f,
-        };
-        int xl[] = {
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-        };
-        int yl[] = { 
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-        };
+        };*/
         //outPtr = clown;
-        for (int i = 0; i < 54; i++) {
-            outPtr[i] = relative_pos[i] * r + xl[i] * x + yl[i] * y;
+        for (int i = 0; i < edges * 9; i++) {
+            outPtr[i] = RVL[i] * r + xl[i] * x + yl[i] * y;
         }
         //memcpy(outPtr, &clown, 9 * sizeof(GLfloat));
         return outPtr;
@@ -238,25 +247,44 @@ int main(int argc, char *argv[]) {
 
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-    int increment = 0;
-    std::vector<Particle> pList(3);
-    pList[0] = Particle();
-    pList[1] = Particle();
-    pList[2] = Particle();
+    int edges = 1000;
+    std::vector<Particle> pList;
+    pList.push_back(Particle(edges, 0.2, 0, 0));
+    pList.push_back(Particle(edges, 0.2, -0.5, -0.5));
+    pList.push_back(Particle(edges, 0.2, 0.5, 0.5));
+    //Particle lilpart(edges, 0.3, 0, 0);
     while (!glfwWindowShouldClose(window)) {
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (toggle) {
             glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
         } else {
-            increment++;
-            std::vector<GLfloat> drawVertPtr(56);
-            Particle lilpart;
-            lilpart.r = (sin(increment * 0.01) + 1) * 0.05 + 0.2;
-            drawVertPtr = lilpart.get_draw_data();
+            std::vector<GLfloat> drawVertPtr;
+            /*for (int i = 0; i < lilpart.get_draw_data().size(); i++) {
+                if ((i) % 3 == 0) {
+                    std::cout << '(' << lilpart.get_draw_data()[i] << ", ";
+                } else if ((i -1) % 3 == 0) {
+                    std::cout << lilpart.get_draw_data()[i] << "), ";
+                } else {
+
+                }
+            }
+            std::cout << std::endl;
+            std::cout << std::endl;
+            for (auto element : lilpart.get_draw_data()) {
+                std::cout << element << ", ";
+            }
+            std::cout << std::endl;
+            std::cout << std::endl;
+            std::cout << std::endl;*/
+            for (int i = 0; i < pList.size(); i++) {
+                for (auto element : pList[i].get_draw_data()) {
+                    drawVertPtr.push_back(element);
+                }
+            }
             GLfloat *drawVertPtrArray = &drawVertPtr[0];
             
-            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 56, drawVertPtrArray, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * edges * 9 * pList.size(), drawVertPtrArray, GL_DYNAMIC_DRAW);
         }
 
 
@@ -276,7 +304,7 @@ int main(int argc, char *argv[]) {
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
         // Draw the triangle
-        glDrawArrays(GL_TRIANGLES, 0, 18);
+        glDrawArrays(GL_TRIANGLES, 0, edges * 3 * pList.size());
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
 

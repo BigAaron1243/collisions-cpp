@@ -4,6 +4,7 @@
 #include "linmath.h"
 #include <iostream>
 #include <vector>
+#include <chrono>
 #include <cmath>
 #include <math.h>
 
@@ -24,7 +25,6 @@ class Particle {
         std::vector<GLfloat> get_draw_data();
         Particle(int edgesInit, double rInit, double xInit, double yInit); 
         void update(double scale);
-        void addDxDy(double iDx, double iDy);
 };
 
 Particle::Particle(int edgesInit, double rInit, double xInit, double yInit) {
@@ -71,11 +71,6 @@ std::vector<GLfloat> Particle::get_draw_data() {
     return outPtr;
 }
 
-void Particle::addDxDy(double iDx, double iDy) {
-    dx = dx + iDx;
-    dy = dy + iDy;
-}
-
 void Particle::update(double scale) {
     x += dx * scale;
     y += dy * scale;
@@ -92,7 +87,7 @@ struct posxy {
     float x, y;
 };
 
-bool toggle = 0;
+bool addPart = 0;
 
 static const GLfloat g_vertex_buffer_data[] = {
    -1.0f, -1.0f, 0.0f,
@@ -147,7 +142,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     if (key == GLFW_KEY_A && action == GLFW_PRESS)
-        toggle = !toggle;
+        addPart = true;
 }
 
 std::vector<struct posxy> particles;
@@ -174,7 +169,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_SAMPLES, 4); //4x antialiasing
     
     // Create window and make it current
-    GLFWwindow* window = glfwCreateWindow(640, 640, "Collisions", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 800, "Collisions", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to open glfw window";
         glfwTerminate();
@@ -269,52 +264,167 @@ int main(int argc, char *argv[]) {
 
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-    int edges = 1000;
+    int edges = 32;
+    double radius = 0.2;
     std::vector<Particle> pList;
-    pList.push_back(Particle(edges, 0.2, 0, 0));
-    pList.push_back(Particle(edges, 0.2, -0.5, -0.5));
-    pList.push_back(Particle(edges, 0.2, 0.5, 0.5));
-    //Particle lilpart(edges, 0.3, 0, 0);
+    pList.push_back(Particle(edges, radius, 0, 0));
+    //pList.push_back(Particle(edges, radius, -0.5, -0.5));
+    //pList.push_back(Particle(edges, radius, 0.5, 0.5));
+
+    double timeNow = glfwGetTime();
+    double deltaTime = 0;
+    int increment = 0;
     while (!glfwWindowShouldClose(window)) {
 
 
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        if (toggle) {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
-        } else {
-            std::vector<GLfloat> drawVertPtr;
-            for (int i = 0; i < pList.size(); i++) {
-                pList.at(i).addDxDy(0, -0.00001);
-                pList[i].update(1);
-            }
-            std::cout << pList[0].dy << std::endl;
 
-            /*for (int i = 0; i < lilpart.get_draw_data().size(); i++) {
-                if ((i) % 3 == 0) {
-                    std::cout << '(' << lilpart.get_draw_data()[i] << ", ";
-                } else if ((i -1) % 3 == 0) {
-                    std::cout << lilpart.get_draw_data()[i] << "), ";
-                } else {
+        increment++;
+        deltaTime = glfwGetTime() - timeNow;
+        //std::cout << deltaTime << std::endl;
+        //std::cout << timeNow << std::endl;
+        timeNow = glfwGetTime();
 
-                }
-            }
-            std::cout << std::endl;
-            std::cout << std::endl;
-            for (auto element : lilpart.get_draw_data()) {
-                std::cout << element << ", ";
-            }
-            std::cout << std::endl;
-            std::cout << std::endl;
-            std::cout << std::endl;*/
-            for (int i = 0; i < pList.size(); i++) {
-                for (auto element : pList[i].get_draw_data()) {
-                    drawVertPtr.push_back(element);
-                }
-            }
-            GLfloat *drawVertPtrArray = &drawVertPtr[0];
-            
-            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * edges * 9 * pList.size(), drawVertPtrArray, GL_DYNAMIC_DRAW);
+        if (increment > 10) {
+            std::cout << "FPS: " << 1 / deltaTime << std::endl;
+            increment = 0;
         }
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        if (addPart) {
+            //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+            pList.push_back(Particle(edges, radius, -0.1, 0));
+            addPart = false;
+        }
+        std::vector<GLfloat> drawVertPtr;
+        //-- Under here lies the collision detection
+        
+        for (int i = 0; i < pList.size(); i++) {
+            //std::cout << iX << ", " << iY << " | " << cellx << ", " << celly << std::endl;
+        }
+
+        //Old + doesnt work + L + ratio
+        /*
+        for (double x = -1; x < 1; x+=2*radius) {
+            for (double y = -1; y < 1; y+=2*radius) {
+                
+                for (int i = 0; i < pList.size(); i++) {
+                    double ezX = pList.at(i).x;
+                    double ezY = pList.at(i).y;
+                    double cellx = ezX - ezX % (2 * radius);
+                    double celly = ezY - ezY % (2 * radius);
+                    if (ezX >= x && ezX <= x + 2*radius && ezY >= y && ezY <= y + 2 * radius) {
+                        std::cout << ezX << ", " << ezY << " | " << x << "<>" << x + 2 * radius<< ", " <<y << "<>" << y + 2 * radius << std::endl;
+                        for (int j = 0; j < pList.size(); j++) {
+                            double ezX2 = pList.at(j).x;
+                            double ezY2 = pList.at(j).y;
+                            if (ezX2 >= x && ezX2 <= x + 2*radius && ezY2 >= y && ezY2 <= y + 2 * radius && i != j) {
+                                double hypotenuse = sqrt(pow((ezX - ezX2), 2) + pow((ezY - ezY2), 2));
+                                if (hypotenuse < 2*radius) {
+                                    double theta = asin(ezY - ezY2 / hypotenuse);
+                                    std::cout << "arcsin of y1: " << ezY << "minus y2: " << ezY2 << " / Hypotenuse: " << hypotenuse << " = " << theta <<std::endl;
+                                    double h = (hypotenuse - 2 * radius) * sin(theta);
+                                    double b = (hypotenuse - 2 * radius) * cos(theta);
+                                    std::cout << h;
+                                    pList.at(i).x += b / 2;
+                                    pList.at(j).x -= b / 2;
+                                    pList.at(i).y += h / 2;
+                                    pList.at(j).y -= h / 2;
+                                    pList.at(i).dy = 0;
+                                }   
+                            }
+                        }
+                    }
+                }
+            }
+        }*/
+        for (int i = 0; i < pList.size(); i++) {
+      
+            //-- Apply gravity
+            pList[i].dy += -0.01;
+
+            //-- If touching floor, walls, or ceiling, get pushed back, 0 velocity:
+            if (pList.at(i).x + pList.at(i).r > 1) {
+                pList.at(i).x = 1 - pList.at(i).r;
+                pList[i].dx = 0;
+                //pList.at(i).addDxDy(-pList.at(i).dx, 0);
+            }
+
+            if (pList.at(i).y + pList.at(i).r > 1) {
+                pList.at(i).y = 1 - pList.at(i).r;
+                //pList.at(i).addDxDy(0, -pList.at(i).dy);
+                pList[i].dy = 0;
+            }
+
+            if (pList.at(i).x - pList.at(i).r < -1) {
+                pList.at(i).x = -1 + pList.at(i).r;
+                //pList.at(i).addDxDy(-pList.at(i).dx, 0);
+                pList[i].dx = 0;
+            }
+
+            if (pList.at(i).y - pList.at(i).r < -1) {
+                pList.at(i).y = -1 + pList.at(i).r;
+                //pList.at(i).addDxDy(0, -pList.at(i).dy);
+                pList[i].dy = 0;
+            }
+            
+            //-- Collision detection
+            double iX = pList[i].x;
+            double iY = pList[i].y;
+            double cRng = 2 * radius;
+            for (int j = 0; j < pList.size(); j++) {
+                if (i != j) {
+                    double jX = pList[j].x;
+                    double jY = pList[j].y;
+                    if (jX < iX + cRng && jX > iX - cRng && jY < iY + cRng && jY > iY - cRng) {
+                        double hypotenuse = sqrt(pow((iX - jX), 2) + pow((iY - jY), 2));
+                        if (hypotenuse < 2*radius) {
+                            double c = 2 * radius - hypotenuse;
+                            double theta = asin((iY - jY) / hypotenuse);
+                            //std::cout << "c: " << c << std::endl;
+                            double h = (c / 2) * sin(theta);
+                            double b = (c / 2) * cos(theta);
+                            pList.at(i).x += b;
+                            pList.at(j).x -= b;
+                            pList.at(i).y += h;
+                            pList.at(j).y -= h;
+                            pList[i].dy = 0;
+                            pList[j].dy = 0;
+                            //pList[i].addDxDy(-pList[i].dx, -pList[i].dy);
+                            //pList[j].addDxDy(-pList[j].dx, -pList[j].dy);
+                        }
+                    }
+                }
+            }
+            //std::cout << i << " | x: " << pList[i].x << " y: " << pList[i].y << std::endl;
+
+            //-- Update position as per dx amd dy
+            pList[i].update(deltaTime);
+        }
+
+        /*for (int i = 0; i < lilpart.get_draw_data().size(); i++) {
+            if ((i) % 3 == 0) {
+                std::cout << '(' << lilpart.get_draw_data()[i] << ", ";
+            } else if ((i -1) % 3 == 0) {
+                std::cout << lilpart.get_draw_data()[i] << "), ";
+            } else {
+
+            }
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+        for (auto element : lilpart.get_draw_data()) {
+            std::cout << element << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+        std::cout << std::endl;*/
+        for (int i = 0; i < pList.size(); i++) {
+            for (auto element : pList[i].get_draw_data()) {
+                drawVertPtr.push_back(element);
+            }
+        }
+        GLfloat *drawVertPtrArray = &drawVertPtr[0];
+        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * edges * 9 * pList.size(), drawVertPtrArray, GL_DYNAMIC_DRAW);
 
 
         // Clear the screen

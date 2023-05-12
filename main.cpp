@@ -11,6 +11,10 @@
 #define sq3o2 0.866025404f
 
 
+double dot(const std::pair<double, double>& v1, const std::pair<double, double>& v2) {
+        return v1.first * v2.first + v1.second * v2.second;
+}
+
 class Particle {
     public:
         double x, y, r;
@@ -291,7 +295,7 @@ int main(int argc, char *argv[]) {
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (addPart) {
             //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
-            pList.push_back(Particle(edges, radius, -0.1, 0));
+            pList.push_back(Particle(edges, radius, 0.15, 0));
             addPart = false;
         }
         std::vector<GLfloat> drawVertPtr;
@@ -367,19 +371,19 @@ int main(int argc, char *argv[]) {
             }
             
             //-- Collision detection
-            double iX = pList[i].x;
-            double iY = pList[i].y;
+            double x1 = pList[i].x;
+            double y1 = pList[i].y;
             double cRng = 2 * radius;
             for (int j = 0; j < pList.size(); j++) {
                 if (i != j) {
-                    double jX = pList[j].x;
-                    double jY = pList[j].y;
-                    if (jX < iX + cRng && jX > iX - cRng && jY < iY + cRng && jY > iY - cRng) {
-                        double hypotenuse = sqrt(pow((iX - jX), 2) + pow((iY - jY), 2));
+                    double x2 = pList[j].x;
+                    double y2 = pList[j].y;
+                    if (x2 < x1 + cRng && x2 > x1 - cRng && y2 < y1 + cRng && y2 > y1 - cRng) {
+                        double hypotenuse = sqrt(pow((x1 - x2), 2) + pow((y1 - y2), 2));
                         if (hypotenuse < 2*radius) {
                             //-- This pushes the circles out of eachother
                             double c = 2 * radius - hypotenuse;
-                            double theta = asin((iY - jY) / hypotenuse);
+                            double theta = asin((y1 - y2) / hypotenuse);
                             //std::cout << "c: " << c << std::endl;
                             double h = (c / 2) * sin(theta);
                             double b = (c / 2) * cos(theta);
@@ -393,7 +397,35 @@ int main(int argc, char *argv[]) {
                             //pList[i].addDxDy(-pList[i].dx, -pList[i].dy);
                             //pList[j].addDxDy(-pList[j].dx, -pList[j].dy);
                             //-- We will now calculate the resultant momentum from the collision
-                            std::pair<double, double> direction(jX - iX, jY - iY);
+
+                            //-- First calculate the contact angle
+                            //-- you first need to determine the point of contact between them. This can be done by finding the intersection point of the 
+                            //-- two circles with radii equal to the radii of the objects and centered at their respective Cartesian coordinates.
+
+                            //-- 1. Calculate the vector from the center of the first object to the point of contact.
+
+                            std::pair<double, double> v1(y2-y1, x2-x1);
+                            std::pair<double, double> v2(y1-y2, x1-x2);
+
+                            //-- 2. Calculate the dot product of these two vectors.
+                            double dotProduct = dot(v1, v2);
+
+                            double v1m = sqrt(pow(v1.first, 2) + pow(v1.second, 2));
+                            double v2m = sqrt(pow(v2.first, 2) + pow(v2.second, 2));
+
+                            //-- 3. Divide the dot product by the product of the magnitudes of the two vectors.
+                            //-- 4. Take the arccosine of the result to get the contact angle in radians.
+                            double contactAngle = asin(dotProduct / (v1m * v2m));
+
+
+
+                            std::cout << (180 / M_PI) *contactAngle << std::endl;
+
+                            getchar();
+
+
+    
+                            /*std::pair<double, double> direction(jX - iX, jY - iY);
                             double magnitude = sqrt(direction.first * direction.first + direction.second * direction.second);
                             std::pair<double, double> normal(-direction.second, direction.first);
                             normal.first /= magnitude;
@@ -401,7 +433,7 @@ int main(int argc, char *argv[]) {
 
                             std::pair<double, double> p (iX-jX, iY-jY);
                             std::pair<double, double> v (pList[i].dx-pList[j].dx, pList[i].dy-pList[j].dy);
-                            
+                            */ 
                             //std::cout << "(" << normal.first << ", " << normal.second << ")\n";
                             /*std::pair<double, double> velocity1(iX, iX);
                             std::pair<double, double> velocity2(jX, jX);
@@ -486,6 +518,3 @@ int main(int argc, char *argv[]) {
     glfwTerminate();
 }
 
-double dot(const std::pair<double, double>& v1, const std::pair<double, double>& v2) {
-        return v1.first * v2.first + v1.second * v2.second;
-}

@@ -289,10 +289,17 @@ int main(int argc, char *argv[]) {
 
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+
+
+    double wallBounceLoss = 1;
+    double collisionLoss = 1;
     int edges = 10;
+    double energy = 0.002;
     double radius = 0.05;
     std::vector<Particle> pList;
-    pList.push_back(Particle(edges, radius, 0, 0));
+    pList.push_back(Particle(edges, radius, (rand() % 100) / 100, 0));
+    pList[pList.size() - 1].dx = ((rand() % 1000) * energy) - ((rand() % 1000) * energy);
+    pList[pList.size() - 1].dy = ((rand() % 1000) * energy) - ((rand() % 1000) * energy);
     //pList.push_back(Particle(edges, radius, -0.5, -0.5));
     //pList.push_back(Particle(edges, radius, 0.5, 0.5));
 
@@ -316,7 +323,9 @@ int main(int argc, char *argv[]) {
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (addPart) {
             //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
-            pList.push_back(Particle(edges, radius, (rand() % 100) / 1000, 0));
+            pList.push_back(Particle(edges, radius, (rand() % 100) / 100, 0));
+            pList[pList.size() - 1].dx = ((rand() % 1000) * energy) - ((rand() % 1000) * energy);
+            pList[pList.size() - 1].dy = ((rand() % 1000) * energy) - ((rand() % 1000) * energy);
             addPart = false;
         }
         std::vector<GLfloat> drawVertPtr;
@@ -364,31 +373,31 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < pList.size(); i++) {
       
             //-- Apply gravity
-            pList[i].dy += -0.01;
+            pList[i].dy += -0.02;
 
             //-- If touching floor, walls, or ceiling, get pushed back, 0 velocity:
             if (pList.at(i).x + pList.at(i).r > 1) {
                 pList.at(i).x = 1 - pList.at(i).r;
-                pList[i].dx = -pList[i].dx;
+                pList[i].dx = -pList[i].dx * wallBounceLoss;
                 //pList.at(i).addDxDy(-pList.at(i).dx, 0);
             }
 
-            if (pList.at(i).y + pList.at(i).r > 1) {
+            /*if (pList.at(i).y + pList.at(i).r > 1) {
                 pList.at(i).y = 1 - pList.at(i).r;
                 //pList.at(i).addDxDy(0, -pList.at(i).dy);
-                pList[i].dy = -pList[i].dy;
-            }
+                pList[i].dy = -pList[i].dy* wallBounceLoss;
+            }*/
 
             if (pList.at(i).x - pList.at(i).r < -1) {
                 pList.at(i).x = -1 + pList.at(i).r;
                 //pList.at(i).addDxDy(-pList.at(i).dx, 0);
-                pList[i].dx = -pList[i].dx;
+                pList[i].dx = -pList[i].dx* wallBounceLoss;
             }
 
             if (pList.at(i).y - pList.at(i).r < -1) {
                 pList.at(i).y = -1 + pList.at(i).r;
                 //pList.at(i).addDxDy(0, -pList.at(i).dy);
-                pList[i].dy = -pList[i].dy;
+                pList[i].dy = -pList[i].dy* wallBounceLoss;
             }
             
             //-- Collision detection
@@ -444,6 +453,9 @@ int main(int argc, char *argv[]) {
                             double v2i = sqrt(dx2*dx2 + dy2 * dy2);
                             double a1 = getAngleRad(dx1, dy1);
                             double a2 = getAngleRad(dx2, dy2);
+
+                            v1i = v1i * collisionLoss;
+                            v2i = v2i * collisionLoss;
 
                             double dx1r = v1i * cos(a1-phi);
                             double dy1r = v1i * sin(a1-phi);

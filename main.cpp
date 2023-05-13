@@ -7,12 +7,31 @@
 #include <chrono>
 #include <cmath>
 #include <math.h>
+#include <ctime>
+#include <cstdlib>
 
 #define sq3o2 0.866025404f
 
 
 double dot(const std::pair<double, double>& v1, const std::pair<double, double>& v2) {
         return v1.first * v2.first + v1.second * v2.second;
+}
+
+double getAngleRad(double x, double y) {
+    if (x < 0) {
+        return M_PI + atan(y/x);
+    } else if (x > 0 && y >= 0) {
+        return atan(y/x);
+    } else if (x > 0 && y < 0) {
+        return 2 * M_PI + atan(y/x);
+    } else if (x == 0 && y == 0) {
+        return 0;
+    } else if (x == 0 && y >= 0) {
+        return M_PI / 2;
+    } else {
+        return M_PI * 1.5;
+    }
+    return NAN;
 }
 
 class Particle {
@@ -78,6 +97,8 @@ std::vector<GLfloat> Particle::get_draw_data() {
 void Particle::update(double scale) {
     x += dx * scale;
     y += dy * scale;
+    //dx = dx * 0.999;
+    //dy = dy * 0.999;
 }
 
 struct vattr
@@ -158,7 +179,7 @@ int main(int argc, char *argv[]) {
     pxy.x = 0;
     pxy.y = 0;
 
-
+    srand((unsigned)time(0));
     /// vvvvvvv RELATED TO OPENGL vvvvvvv
 
     // Init glfw
@@ -268,8 +289,8 @@ int main(int argc, char *argv[]) {
 
     // Set glClearColor
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-    int edges = 32;
-    double radius = 0.2;
+    int edges = 10;
+    double radius = 0.05;
     std::vector<Particle> pList;
     pList.push_back(Particle(edges, radius, 0, 0));
     //pList.push_back(Particle(edges, radius, -0.5, -0.5));
@@ -295,7 +316,7 @@ int main(int argc, char *argv[]) {
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         if (addPart) {
             //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
-            pList.push_back(Particle(edges, radius, 0.15, 0));
+            pList.push_back(Particle(edges, radius, (rand() % 100) / 1000, 0));
             addPart = false;
         }
         std::vector<GLfloat> drawVertPtr;
@@ -348,36 +369,41 @@ int main(int argc, char *argv[]) {
             //-- If touching floor, walls, or ceiling, get pushed back, 0 velocity:
             if (pList.at(i).x + pList.at(i).r > 1) {
                 pList.at(i).x = 1 - pList.at(i).r;
-                pList[i].dx = 0;
+                pList[i].dx = -pList[i].dx;
                 //pList.at(i).addDxDy(-pList.at(i).dx, 0);
             }
 
             if (pList.at(i).y + pList.at(i).r > 1) {
                 pList.at(i).y = 1 - pList.at(i).r;
                 //pList.at(i).addDxDy(0, -pList.at(i).dy);
-                pList[i].dy = 0;
+                pList[i].dy = -pList[i].dy;
             }
 
             if (pList.at(i).x - pList.at(i).r < -1) {
                 pList.at(i).x = -1 + pList.at(i).r;
                 //pList.at(i).addDxDy(-pList.at(i).dx, 0);
-                pList[i].dx = 0;
+                pList[i].dx = -pList[i].dx;
             }
 
             if (pList.at(i).y - pList.at(i).r < -1) {
                 pList.at(i).y = -1 + pList.at(i).r;
                 //pList.at(i).addDxDy(0, -pList.at(i).dy);
-                pList[i].dy = 0;
+                pList[i].dy = -pList[i].dy;
             }
             
             //-- Collision detection
             double x1 = pList[i].x;
             double y1 = pList[i].y;
+            double dx1 = pList[i].dx;
+            double dy1 = pList[i].dy;
             double cRng = 2 * radius;
             for (int j = 0; j < pList.size(); j++) {
                 if (i != j) {
                     double x2 = pList[j].x;
                     double y2 = pList[j].y;
+
+                    double dx2 = pList[j].dx;
+                    double dy2 = pList[j].dy;
                     if (x2 < x1 + cRng && x2 > x1 - cRng && y2 < y1 + cRng && y2 > y1 - cRng) {
                         double hypotenuse = sqrt(pow((x1 - x2), 2) + pow((y1 - y2), 2));
                         if (hypotenuse < 2*radius) {
@@ -404,24 +430,75 @@ int main(int argc, char *argv[]) {
 
                             //-- 1. Calculate the vector from the center of the first object to the point of contact.
 
-                            std::pair<double, double> v1(y2-y1, x2-x1);
-                            std::pair<double, double> v2(y1-y2, x1-x2);
+                            double dtr = M_PI / 180;
+                            double dx = x2 - x1;
+                            double dy = y2 - y1;
+                            double phi = 0;
+                            if (dx == 0) {
+                                phi = M_PI / 2;
+                            } else {
+                                phi = atan(dy/dx);
+                            }
+
+                            double v1i = sqrt(dx1*dx1 + dy1 * dy1);
+                            double v2i = sqrt(dx2*dx2 + dy2 * dy2);
+                            double a1 = getAngleRad(dx1, dy1);
+                            double a2 = getAngleRad(dx2, dy2);
+
+                            double dx1r = v1i * cos(a1-phi);
+                            double dy1r = v1i * sin(a1-phi);
+                            
+                            double dx2r = v2i * cos(a2-phi);
+                            double dy2r = v2i * sin(a2-phi);
+                            double m1 = 1;
+                            double m2 = 1;
+
+                            /*
+                            dx1r = dx1r * 0.99;
+                            dy1r = dy1r * 0.99;
+                            dx2r = dx2r * 0.99;
+                            dy2r = dy2r * 0.99;
+                            */
+                            double v1xf = ((m1-m2)*dx1r+(m2+m2)*dx2r)/(m1+m2);
+                            double v2xf = ((m1+m1)*dx1r+(m2-m1)*dx2r)/(m1+m2);
+
+                            //double v1yf = ((m1-m2)*dy1r+(m2+m2)*dy2r)/(m1+m2);
+                            //double v2yf = ((m1+m1)*dy1r+(m2-m1)*dy2r)/(m1+m2);
+                            double v1yf = dy1r;
+                            double v2yf = dy2r;
+
+                            double dx1f = cos(phi)*v1xf+cos(phi+M_PI/2) * v1yf;
+                            double dy1f = sin(phi)*v1xf+sin(phi+M_PI/2) * v1yf;
+                            double dx2f = cos(phi)*v2xf+cos(phi+M_PI/2) * v2yf;
+                            double dy2f = sin(phi)*v2xf+sin(phi+M_PI/2) * v2yf;
+
+
+                            pList[i].dx = dx1f;
+                            pList[i].dy = dy1f;
+                            pList[j].dx = dx2f;
+                            pList[j].dy = dy2f;
+
+
+
+
+
+                            //std::pair<double, double> v1(y2-y1, x2-x1);
+                            //std::pair<double, double> v2(y1-y2, x1-x2);
 
                             //-- 2. Calculate the dot product of these two vectors.
-                            double dotProduct = dot(v1, v2);
+                            //double dotProduct = dot(v1, v2);
 
-                            double v1m = sqrt(pow(v1.first, 2) + pow(v1.second, 2));
-                            double v2m = sqrt(pow(v2.first, 2) + pow(v2.second, 2));
+                            //double v1m = sqrt(pow(v1.first, 2) + pow(v1.second, 2));
+                            //double v2m = sqrt(pow(v2.first, 2) + pow(v2.second, 2));
 
                             //-- 3. Divide the dot product by the product of the magnitudes of the two vectors.
                             //-- 4. Take the arccosine of the result to get the contact angle in radians.
-                            double contactAngle = asin(dotProduct / (v1m * v2m));
+                            //double contactAngle = asin(dotProduct / (v1m * v2m));
 
 
 
-                            std::cout << (180 / M_PI) *contactAngle << std::endl;
+                            //std::cout << (180 / M_PI) *contactAngle << std::endl;
 
-                            getchar();
 
 
     

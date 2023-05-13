@@ -1,4 +1,4 @@
-#collisions-cpp  
+# collisions-cpp  
 Fun app that puts circles in a box and bounces them around :)
 
 Written in c++ with glad and glfw for rendering  

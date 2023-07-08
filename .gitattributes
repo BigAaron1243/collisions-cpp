@@ -1,3 +1,4 @@
 glad.c linguist-vendored
+linmath.h linguist-vendored
 glfw/** linguist-vendored
 glad/** linguist-vendored

@@ -1,7 +1,7 @@
 OBJS = main.o glad.o
 CFLAGS = -Wall
 INCLUDES = -I./glad/include/ -I./glfw/include/
-LIBS = -L./glfw/lib-mingw-w64/ -lopengl32 -lglu32 -lglfw3 -lgdi32
+LIBS = -lglfw
 CC = g++
 
 main:${OBJS}

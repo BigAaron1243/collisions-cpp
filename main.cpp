@@ -97,8 +97,14 @@ std::vector<GLfloat> Particle::get_draw_data() {
 void Particle::update(double scale) {
     x += dx * scale;
     y += dy * scale;
-    //dx = dx * 0.999;
-    //dy = dy * 0.999;
+	if (dx > 0) 
+		dx = dx - 0.001;
+	if (dx < 0)
+		dx = dx + 0.001;
+	if (dy > 0) 
+		dy = dy - 0.001;
+	if (dy < 0)
+		dy = dy + 0.001;
 }
 
 struct vattr
@@ -291,7 +297,7 @@ int main(int argc, char *argv[]) {
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
 
-    double wallBounceLoss = 1;
+    double wallBounceLoss = 0.7;
     double collisionLoss = 1;
     int edges = 10;
     double energy = 0.002;

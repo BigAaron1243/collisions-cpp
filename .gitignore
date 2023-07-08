@@ -1,1 +1,4 @@
 *.zip
+main
+main.exe
+*.o
